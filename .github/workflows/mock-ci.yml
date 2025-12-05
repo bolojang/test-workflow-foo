@@ -109,14 +109,15 @@ jobs:
       - name: Report status to PR
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [[ "${{ needs.test-python.result }}" == "success" && "${{ needs.test-typescript.result }}" == "success" && "${{ needs.test-cdk-nag.result }}" == "success" ]]; then
-            STATE="success"
-            DESC="All tests passed"
-          else
-            STATE="failure"
-            DESC="Tests failed - run locally: make test"
-          fi
-          gh api repos/${{ github.repository }}/statuses/${{ inputs.sha }} \
-            -f state="$STATE" -f context="CI / tests" -f description="$DESC" \
-            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          report_status() {
+            local result=$1 context=$2
+            local state="success" desc="Passed"
+            [[ "$result" != "success" ]] && state="failure" && desc="Failed - run: make test"
+            gh api repos/${{ github.repository }}/statuses/${{ inputs.sha }} \
+              -f state="$state" -f context="$context" -f description="$desc" -f target_url="$RUN_URL"
+          }
+          report_status "${{ needs.test-python.result }}" "test-python"
+          report_status "${{ needs.test-typescript.result }}" "test-typescript"
+          report_status "${{ needs.test-cdk-nag.result }}" "test-cdk-nag"
