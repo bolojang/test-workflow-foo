@@ -1,3 +1,3 @@
 # test-workflow-foo
 
-test simple
+test simple - second push
