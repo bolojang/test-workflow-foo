@@ -1,0 +1,89 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  # Manual trigger for testing PRs - reviewer runs against specific commit SHA
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to test (from PR)'
+        required: true
+        type: string
+  # Automatic on push to main (after PR merge)
+  push:
+    branches:
+      - main
+
+jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Mock Python tests
+        run: |
+          echo "Running Python tests against SHA: ${{ inputs.sha || github.sha }}"
+          echo "Installing dependencies..."
+          sleep 2
+          echo "Running pytest..."
+          sleep 2
+          echo "All Python tests passed!"
+
+  test-typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Mock TypeScript tests
+        run: |
+          echo "Running TypeScript tests against SHA: ${{ inputs.sha || github.sha }}"
+          echo "Installing npm dependencies..."
+          sleep 2
+          echo "Running vitest..."
+          sleep 2
+          echo "All TypeScript tests passed!"
+
+  test-cdk-nag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Mock CDK Nag checks
+        run: |
+          echo "Running CDK Nag against SHA: ${{ inputs.sha || github.sha }}"
+          echo "Synthesizing CDK..."
+          sleep 2
+          echo "CDK Nag checks passed!"
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [test-python, test-typescript, test-cdk-nag]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Mock deploy to staging
+        run: |
+          echo "Deploying to staging..."
+          sleep 2
+          echo "Staging deployment complete!"
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Mock deploy to prod
+        run: |
+          echo "Deploying to prod..."
+          sleep 2
+          echo "Prod deployment complete!"
